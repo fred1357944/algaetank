@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Advanced 3D Model Showcase</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-environment-component/dist/aframe-environment-component.min.js"></script>
+
+    <style>
+      body {
+        font: normal 500 1.2rem/1.2 Inconsolata, Andale Mono, Courier New,
+          monospace;
+        color: #333;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+      .night-mode-title {
+        color: white;
+      }
+
+      .zen-mode .info-text {
+        color: black;
+      }
+
+      .button-title {
+        font-size: 16px;
+        color: #333;
+        padding: 2px;
+        margin-top: 10px;
+        margin-bottom: 5px;
+      }
+      .additional-controls {
+        position: fixed;
+        top: 100px; /* 根据需要调整位置 */
+        left: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .logo-container {
+        background-image: url("../logo/logo.png");
+        background-size: contain;
+        background-repeat: no-repeat;
+        width: 100px;
+        height: 50px;
+        position: fixed;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 20;
+      }
+      #zoom-button {
+        background-color: #ff3b30; /* 红色按钮 */
+        border: 2px solid #fff; /* 白色边框 */
+        height: 50px;
+        width: 50px;
+        border-radius: 50%; /* 圆形按钮 */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 阴影效果 */
+        cursor: pointer;
+        transition: all 0.3s ease-in-out;
+        position: fixed;
+        bottom: 80px;
+        right: 21px;
+        opacity: 0.8; /* 非hover时的透明度 */
+      }
+
+      #zoom-button:hover {
+        background-color: #fa8072; /* 按钮hover时的颜色变化 */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* hover时阴影效果变化 */
+        opacity: 1;
+      }
+      #zoom-button:active {
+        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2); /* 按下时的内阴影效果 */
+        transform: scale(0.95); /* 按下时轻微缩小，模拟按钮按下效果 */
+      }
+
+      /* 版权文字样式 */
+      .copyright-text {
+        position: fixed;
+        bottom: 17px;
+        left: 40%;
+        transform: translateX(-22%);
+        color: white; /* 默认颜色 */
+        font-size: 12px;
+        z-index: 10;
+      }
+
+      /* 透明背景样式 */
+      .transparent-background {
+        background-color: rgba(255, 255, 255, 0.8);
+      }
+      #controls {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        color: white;
+        font-family: "Helvetica Neue", Arial, sans-serif; /* 使用 Apple 官网风格的字体 */
+        font-size: 9px; /* 较小的字体大小 */
+        line-height: 1.5; /* 较小的行高 */
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        background-color: #ffffff; /* 白色背景 */
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* 轻微的阴影效果 */
+        margin: 1px; /* 与上方元素留出间距 */
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif; /* 现代字体 */
+        color: #333; /* 深灰色文本 */
+        font-size: 12px; /* 适中的字体大小 */
+        opacity: 1;
+      }
+
+      #rotation-speed {
+        /* 左上角文字 */
+        flex-grow: 1;
+        margin-left: 10px;
+        -webkit-appearance: none; /* 移除默认样式 */
+        width: 100%;
+        height: 4px;
+        background: #ddd; /* 滑块背景 */
+        outline: none; /* 移除轮廓 */
+        opacity: 0.4; /* 轻微透明 */
+        transition: opacity 0.2s;
+        border-radius: 5px; /* 圆角 */
+      }
+
+      #rotation-speed::-webkit-slider-thumb {
+        -webkit-appearance: none; /* 移除默认样式 */
+        appearance: none;
+        width: 20px; /* 滑块大小 */
+        height: 20px;
+        background: #333; /* 滑块颜色 */
+        cursor: pointer; /* 光标样式 */
+        border-radius: 50%; /* 圆形 */
+      }
+
+      .info-text {
+        /* 右上角文字 */
+
+        position: fixed;
+        top: 17px;
+        right: 20px;
+        color: white;
+        font-size: 12px; /* 较小的字体大小 */
+        line-height: 0.8; /* 较小的行高 */
+        padding: 5px;
+        margin: 3px;
+      }
+      .button-container {
+        position: absolute;
+        left: 12px;
+        bottom: 10px;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        text-transform: uppercase;
+      }
+
+      .toggle-button {
+        /* 左下按鈕文字*/
+        background-color: #f5f5f5; /* 淺灰色背景 */
+        color: #333;
+        border: 1px solid #d1d1d1; /* 淺色邊框 */
+        padding: 8px 16px;
+        font-size: 11px;
+        border-radius: 5px; /* 輕微的圓角 */
+        cursor: pointer;
+        transition: all 0.3s ease-in-out;
+        margin: 3px 0;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 更細膩的陰影 */
+      }
+
+      .toggle-button:hover {
+        background-color: #e6e6e6; /* 悬停时的背景颜色 */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 悬停时的陰影 */
+      }
+
+      #info-dialog {
+        position: fixed;
+        width: 300px; /* 或其他尺寸 */
+        background: rgba(255, 255, 255, 0.8); /* 透明度背景 */
+        padding: 20px;
+        border-radius: 10px;
+        display: none; /* 默认隐藏 */
+        /* 其他样式 */
+      }
+
+      /* 適應小屏幕的樣式 */
+      @media (max-width: 600px) {
+        .toggle-button {
+          padding: 6px 12px;
+          font-size: 12px;
+        }
+      }
+
+      .active {
+        background-color: #e6e6e6;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      }
+
+      @media (max-width: 620px) {
+        .button-container,
+        .info-text,
+        #controls {
+          font-size: 12px; /* 更小的字体大小 */
+          padding: 5px; /* 更小的内边距 */
+        }
+
+        .toggle-button {
+          padding: 6px 12px; /* 调整按钮的内边距 */
+          margin: 2px 0; /* 调整按钮间距 */
+        }
+
+        #controls {
+          top: 15px; /* 在较小屏幕上，调整位置 */
+        }
+
+        .info-text {
+          position: fixed;
+          top: calc(
+            15px + 40px + 12px
+          ); /* Rotate Speed Controller 高度 + 初始顶部位置 + 间距 */
+          left: 12px;
+          margin-top: 0; /* 移除额外的顶部间距 */
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="button-container">
+      <!-- Explode Model 按钮组 -->
+      <div class="button-title dynamic-color" id="explodeModelTitle">
+        <strong>Explode Model</strong>
+      </div>
+      <button
+        class="toggle-button"
+        id="structure-button"
+        onclick="toggleModel('structure', this)"
+      >
+        Structure
+      </button>
+      <button
+        class="toggle-button"
+        id="tank-button"
+        onclick="toggleModel('tank', this)"
+      >
+        Tank
+      </button>
+      <button
+        class="toggle-button"
+        id="control-box-button"
+        onclick="toggleModel('control-box', this)"
+      >
+        Control Box
+      </button>
+      <button
+        class="toggle-button"
+        id="implode-all-button"
+        onclick="implodeAll()"
+      >
+        Implode All
+      </button>
+
+      <!-- Background Scene 按钮组 -->
+      <div class="button-title dynamic-color" id="backgroundSceneTitle">
+        <strong>Background Scene</strong>
+      </div>
+      <button
+        class="toggle-button"
+        id="dayMode"
+        onclick="setEnvironment('day')"
+      >
+        Day Mode
+      </button>
+      <button
+        class="toggle-button"
+        id="duskMode"
+        onclick="setEnvironment('dusk')"
+      >
+        Dusk Mode
+      </button>
+      <button
+        class="toggle-button"
+        id="nightMode"
+        onclick="setEnvironment('night')"
+      >
+        Night Mode
+      </button>
+      <button
+        class="toggle-button"
+        id="zenMode"
+        onclick="setEnvironment('zen')"
+      >
+        Zen Mode
+      </button>
+      <!-- Rotation 控制 -->
+      <div class="button-title dynamic-color" id="rotationTitle">
+        <strong>Rotation</strong>
+      </div>
+      <div id="controls">
+        <label for="rotation-speed" id="rotateSpeedControllerLabel">
+          Rotate Speed Controller:&nbsp;&nbsp;&nbsp;
+        </label>
+        <input type="range" id="rotation-speed" min="1" max="100" value="20" />
+      </div>
+
+      <button
+        class="toggle-button"
+        id="toggleModelRotation"
+        onclick="toggleModelRotation()"
+      >
+        Toggle Model Rotation
+      </button>
+      <button class="toggle-button" id="resetViewButton" onclick="resetView()">
+        Reset View
+      </button>
+      <button
+        class="toggle-button"
+        id="languageToggleButton"
+        onclick="toggleLanguage()"
+      >
+        English Mode
+      </button>
+
+      <div class="info-text" id="infoText">
+        <strong><p>Use mouse to rotate and zoom</p></strong>
+        <strong><p>Shift + Drag to pan</p></strong>
+      </div>
+
+      <button class="toggle-button" id="zoom-button"></button>
+
+      <div class="copyright-text">
+        © 2023 Andgreen Co. Ltd. All rights reserved.
+      </div>
+    </div>
+
+    <a-scene
+      renderer="colorManagement: true;"
+      cursor="rayOrigin: mouse"
+      raycaster="objects: [cube]"
+      fog="color: #000000; near: 1; far: 110; oneMapping: ACESFilmicToneMapping"
+    >
+      <a-entity id="environment"></a-entity>
+      <a-assets>
+        <a-asset-item
+          id="structure-model"
+          src="3D/structure-model.gltf"
+        ></a-asset-item>
+        <a-asset-item id="tank-model" src="3D/tank-model.gltf"></a-asset-item>
+        <a-asset-item
+          id="control-box-model"
+          src="3D/control-box-model.gltf"
+        ></a-asset-item>
+      </a-assets>
+
+      <a-entity id="model-group" animate-model-group-on-load>
+        <a-entity
+          id="structure"
+          gltf-model="#structure-model"
+          metal-material
+        ></a-entity>
+
+        <a-entity
+          id="tank"
+          gltf-model="#tank-model"
+          green-glass-material
+        ></a-entity>
+        <a-entity
+          id="control-box"
+          gltf-model="#control-box-model"
+          metal-material
+        ></a-entity>
+      </a-entity>
+
+      <a-light
+        type="directional"
+        color="#fff"
+        intensity="3"
+        position="3 5 3"
+        cast-shadow="true"
+        shadow-camera-near="1"
+        shadow-camera-far="15"
+        shadow-camera-left="-5"
+        shadow-camera-right="5"
+        shadow-camera-top="5"
+        shadow-camera-bottom="-5"
+        shadow-mapSize-width="1024"
+        shadow-mapSize-height="1024"
+        shadow-radius="1"
+      ></a-light>
+      <!--       <a-box position="0 0 0 " rotation="0 0 0" color="#4CC3D9"></a-box> -->
+      <a-light type="ambient" color="#fff" intensity="0.01"></a-light>
+      <a-sky :color="skyColor"></a-sky>
+
+      <!-- <a-entity environment="preset: forest; dressingAmount: 800"></a-entity> -->
+      <!-- <a-entity
+      environment="preset: forest; dressingAmount: 150; dressingColor: #006400; dressingScale: 2; dressingVariance: {x: 5, y: 15, z: 8}; skyType: gradient; horizonColor: #C0C0C0; skyColor: #FFA700;"
+    ></a-entity> -->
+      <a-camera
+        id="main-camera"
+        position="0 0 2"
+        look-controls="enabled: false; magicWindowTrackingEnabled: false; reverseMouseDrag: false; maxPitch: 90; minPitch: 0;"
+      ></a-camera>
+    </a-scene>
+
+    <script>
+      var modelStates = {
+        structure: { expanded: false, position: { x: 0, y: 0, z: 0 } },
+        tank: { expanded: false, position: { x: 0, y: 0, z: 0 } },
+        "control-box": { expanded: false, position: { x: 0, y: 0, z: 0 } }
+      };
+      var initialCameraPosition, initialCameraRotation, initialModelPositions;
+      var camera, modelGroup;
+      var modelRotationActive = false,
+        modelRotationTween;
+      var rotationSpeedControl = document.getElementById("rotation-speed");
+      rotationSpeedControl.disabled = true;
+      var initialGroupCenter;
+      var initialState = {
+        position: { x: 0, y: 0, z: 2 }, // Replace with actual initial values
+        rotation: { x: 0, y: 0, z: 0 } // Replace with actual initial values
+      };
+      var zoomState = {
+        position: { x: -0.4, y: 0, z: 0.2 }, // Replace with actual zoom values
+        rotation: { x: 0, y: 0, z: 0 } // Replace with actual zoom values
+      };
+      var initialCameraState = {
+        position: { x: 0, y: 1, z: 5 },
+        rotation: { x: 0, y: 0, z: 0 },
+        target: { x: 0, y: 0, z: 0 }
+      };
+
+      var zoomCameraState = {
+        position: { x: -0.4, y: 1, z: 2 },
+        rotation: { x: 0, y: Math.PI / 2, z: 0 }, // Adjust as needed
+        target: { x: -0.4, y: 0, z: 0.2 }
+      };
+
+      document.querySelector("a-scene").addEventListener("loaded", function () {
+        camera = document.querySelector("#main-camera").getObject3D("camera");
+        modelGroup = document.querySelector("#model-group");
+        modelGroup.addEventListener("model-loaded", setupScene);
+        // Save the initial state
+        initialCameraPosition = camera.position.clone();
+        initialCameraRotation = camera.rotation.clone();
+        initialCameraState = {
+          position: initialCameraPosition.clone(),
+          rotation: initialCameraRotation.clone(),
+          target: new THREE.Vector3(0, 1, 0) // Assuming looking at origin
+        };
+        // Rest of your code...
+      });
+
+      function moveModelGroupToOrigin() {
+        var bbox = new THREE.Box3().setFromObject(modelGroup.object3D);
+        var bboxBottomCenter = new THREE.Vector3(
+          bbox.min.x + (bbox.max.x - bbox.min.x) / 2,
+          bbox.min.y,
+          bbox.min.z + (bbox.max.z - bbox.min.z) / 2
+        );
+
+        modelGroup.object3D.position.set(
+          -bboxBottomCenter.x,
+          -bboxBottomCenter.y,
+          -bboxBottomCenter.z
+        );
+      }
+      function setupScene() {
+        moveModelGroupToOrigin();
+        adjustModelPositionAndCamera();
+        setInitialStates();
+        calculateInitialGroupCenter(); // 計算模型群組的初始中心點
+      }
+
+      function resetCameraView() {
+        // Set camera to its initial position
+        camera.position.set(
+          initialState.position.x,
+          initialState.position.y + 1,
+          initialState.position.z - 2
+        );
+        // Reset camera's rotation
+
+        camera.lookAt(new THREE.Vector3(0, 1, 0)); // Adjust t
+        // Alternatively, reset the rotation using quaternions
+
+        /*     camera.quaternion.setFromEuler(
+               new THREE.Euler(
+                 initialState.rotation.x,
+                 initialState.rotation.y,
+                 initialState.rotation.z,
+                 "YXZ" // this may vary depending on how your camera is set up
+
+             );
+         */
+        // Ensure the camera is looking at the desired point
+      }
+
+      function updateCamera(state) {
+        camera.position.set(
+          state.position.x,
+          state.position.y,
+          state.position.z
+        );
+        camera.rotation.set(
+          state.rotation.x,
+          state.rotation.y,
+          state.rotation.z
+        );
+        camera.lookAt(
+          new THREE.Vector3(state.target.x, state.target.y, state.target.z)
+        );
+      }
+
+      function resetView() {
+        stopModelRotation(); // Stop model rotation
+        camera.position.copy(initialCameraPosition); // Reset camera position to its initial state
+        camera.rotation.copy(initialCameraRotation); // Reset camera rotation to its initial state
+        // Look at the initial center of the model group
+        camera.lookAt(
+          new THREE.Vector3(
+            initialCameraState.target.x,
+            initialCameraState.target.y,
+            initialCameraState.target.z
+          )
+        );
+
+        // Move each model back to its initial position
+        Object.keys(initialModelPositions).forEach(function (key) {
+          var model = document.querySelector("#" + key);
+          var initialPos = initialModelPositions[key];
+
+          gsap.to(model.object3D.position, {
+            duration: 1,
+            x: initialPos.x,
+            y: initialPos.y,
+            z: initialPos.z,
+            ease: "power3.inOut"
+          });
+        });
+
+        // Reset the model group's rotation
+        gsap.to(modelGroup.object3D.rotation, {
+          duration: 1,
+          x: 0,
+          y: 0,
+          z: 0,
+          ease: "power3.inOut"
+        });
+
+        implodeAll();
+      }
+      function zoomInModel() {
+        updateCamera(zoomCameraState);
+        resetView(); // Ensuring the camera starts from the initial position
+        // Set the camera to the specific zoom state
+        camera.position.set(-1, 1, -2);
+        camera.rotation.set(0, 0, 0); // Adjust as needed
+        camera.lookAt(new THREE.Vector3(0, 1, 0)); // Adjust the vector to your desired lookAt point for the zoom
+      }
+      // Bind the zoomInModel function to the click event of the zoom-button
+      document
+        .getElementById("zoom-button")
+        .addEventListener("click", zoomInModel);
+      document
+        .getElementById("resetViewButton")
+        .addEventListener("click", resetView);
+
+      document
+        .getElementById("zoom-button")
+        .addEventListener("click", function () {
+          // ... set camera position and rotation ...
+        });
+
+      document
+        .getElementById("resetViewButton")
+        .addEventListener("click", function () {
+          // ... reset camera position and rotation ...
+        });
+
+      /*  function adjustModelPositionAndCamera() {
+                   var bbox = new THREE.Box3().setFromObject(modelGroup.object3D);
+                   var bboxCenter = bbox.getCenter(new THREE.Vector3());
+                   var cameraDistance = bbox.getSize(new THREE.Vector3()).length();
+
+                   camera.position.set(
+                     bboxCenter.x,
+                     bboxCenter.y,
+                     bboxCenter.z + cameraDistance / 2
+                   );
+                   camera.lookAt(bboxCenter);
+                 }
+               */
+
+      function adjustModelPositionAndCamera() {
+        var bbox = new THREE.Box3().setFromObject(modelGroup.object3D);
+        var bboxCenter = bbox.getCenter(new THREE.Vector3());
+        var cameraDistance = bbox.getSize(new THREE.Vector3()).length();
+
+        // 设置摄像机的位置，确保 y 坐标为 2
+        camera.position.set(
+          0, //bboxCenter.x,
+          1, // 设置 y 坐标为 2
+          0 //bboxCenter.z + cameraDistance / 2 - 1
+        );
+        camera.lookAt(new THREE.Vector3(0, 1, 0));
+        //camera.lookAt(new THREE.Vector3(0, 1, 0));
+      }
+
+      function setInitialStates() {
+        initialCameraPosition = camera.position.clone();
+        initialCameraRotation = camera.rotation.clone();
+        initialModelPositions = {};
+        Object.keys(modelStates).forEach(function (key) {
+          var model = document.querySelector("#" + key);
+          initialModelPositions[key] = model.getAttribute("position");
+        });
+      }
+
+      // 其他代码保持不变
+
+      function toggleModel(modelId, button) {
+        var model = document.querySelector("#" + modelId);
+        var bbox = new THREE.Box3().setFromObject(model.object3D);
+        var size = bbox.getSize(new THREE.Vector3());
+
+        if (modelStates[modelId].expanded) {
+          gsap.to(model.object3D.position, {
+            duration: 1,
+            x: 0,
+            y: 0,
+            z: 0,
+            ease: "power3.inOut"
+          });
+          button.classList.remove("active");
+        } else {
+          var pos = { x: 0, y: 0, z: 0 };
+          switch (modelId) {
+            case "structure":
+              pos.x = size.x * -2; // 向右邊移動自身寬度
+              break;
+
+            case "tank":
+              pos.y = size.y * 3; // 向上移動自身高度
+              break;
+            case "control-box":
+              pos.x = size.x * 2; // 向右邊移動自身寬度
+              break;
+            // "structure" 模型維持不動
+          }
+          gsap.to(model.object3D.position, {
+            duration: 1,
+            x: pos.x,
+            y: pos.y,
+            z: pos.z,
+            ease: "power3.inOut"
+          });
+          button.classList.add("active");
+        }
+
+        modelStates[modelId].expanded = !modelStates[modelId].expanded;
+      }
+
+      // 其他代码保持不变
+
+      AFRAME.registerComponent("animate-model-group-on-load", {
+        init: function () {
+          var el = this.el; // 获取当前元素（model-group）
+          var initialYPosition = 0; // 假设地平面的位置是0
+
+          // 设置一个标志，确保动画只执行一次
+          var animationExecuted = false;
+
+          // 监听所有子模型的 model-loaded 事件
+          el.addEventListener("model-loaded", () => {
+            if (!animationExecuted) {
+              animationExecuted = true; // 设置标志以避免重复动画
+
+              // 模型加载完成后执行的代码
+              gsap.fromTo(
+                el.object3D.position,
+                { y: 2 }, // 动画开始位置（地平面以上某个位置）
+                {
+                  y: initialYPosition, // 动画结束位置（地平面位置）
+                  duration: 1.5, // 持续时间
+                  ease: "bounce.out", // 缓动效果
+                  onComplete: () =>
+                    console.log(`Animation completed for model group`)
+                }
+              );
+            }
+          });
+        }
+      });
+      function implodeAll() {
+        Object.keys(modelStates).forEach(function (modelId) {
+          var model = document.querySelector("#" + modelId);
+          gsap.to(model.object3D.position, {
+            duration: 1,
+            x: 0,
+            y: 0,
+            z: 0,
+            ease: "power3.inOut"
+          });
+          modelStates[modelId].expanded = false;
+        });
+        document
+          .querySelectorAll(".toggle-button")
+          .forEach((button) => button.classList.remove("active"));
+      }
+
+      function calculateInitialGroupCenter() {
+        var bbox = new THREE.Box3().setFromObject(modelGroup.object3D);
+        initialGroupCenter = bbox.getCenter(new THREE.Vector3());
+        rotationCenter = new THREE.Vector3(0, initialGroupCenter.y, 0);
+      }
+
+      function toggleModelRotation() {
+        modelRotationActive = !modelRotationActive;
+        rotationSpeedControl.disabled = !modelRotationActive;
+
+        if (modelRotationActive) {
+          startModelRotation();
+        } else {
+          stopModelRotation();
+        }
+      }
+      function startModelRotation() {
+        if (modelRotationTween) {
+          modelRotationTween.kill();
+        }
+
+        // 计算模型群的中心点
+        var bbox = new THREE.Box3().setFromObject(modelGroup.object3D);
+        var center = bbox.getCenter(new THREE.Vector3());
+        var radiusMultiplier = 0.04;
+        // 修改旋转持续时间以控制速度，考虑了 radiusMultiplier 的影响
+        var rotationDuration =
+          360 / (rotationSpeedControl.value * radiusMultiplier);
+
+        modelRotationTween = gsap.to(modelGroup.object3D.rotation, {
+          duration: rotationDuration,
+          y: "+=360",
+          ease: "smooth",
+          repeat: -1,
+          onUpdate: function () {
+            // 在每次更新时重新计算模型群的中心点
+            modelGroup.object3D.updateMatrixWorld();
+            modelGroup.object3D.matrixWorld.decompose(
+              center,
+              new THREE.Quaternion(),
+              new THREE.Vector3()
+            );
+            modelGroup.object3D.updateMatrix();
+            modelGroup.object3D.updateWorldMatrix();
+          },
+          transformOrigin: "center center"
+        });
+      }
+
+      function stopModelRotation() {
+        if (modelRotationTween) {
+          modelRotationTween.kill();
+        }
+        modelRotationActive = false;
+        rotationSpeedControl.disabled = true;
+      }
+
+      rotationSpeedControl.addEventListener("input", function () {
+        if (modelRotationActive) {
+          startModelRotation();
+        }
+      });
+
+      window.addEventListener("keydown", function (event) {
+        if (event.key === "Shift") {
+          isShiftDown = true;
+        }
+      });
+
+      window.addEventListener("keyup", function (event) {
+        if (event.key === "Shift") {
+          isShiftDown = false;
+        }
+      });
+
+      window.addEventListener("mousedown", function (event) {
+        if (isShiftDown) {
+          lastMouseX = event.clientX;
+          lastMouseY = event.clientY;
+        }
+      });
+
+      window.addEventListener("mousemove", function (event) {
+        if (
+          isShiftDown &&
+          lastMouseX !== undefined &&
+          lastMouseY !== undefined
+        ) {
+          let deltaX = event.clientX - lastMouseX;
+          let deltaY = event.clientY - lastMouseY;
+          camera.position.x -= deltaX * 0.01;
+          camera.position.y += deltaY * 0.01;
+          lastMouseX = event.clientX;
+          lastMouseY = event.clientY;
+        }
+      });
+
+      window.addEventListener("mouseup", function () {
+        lastMouseX = undefined;
+        lastMouseY = undefined;
+      });
+      window.addEventListener("wheel", function (event) {
+        var delta = -event.wheelDelta || event.detail;
+        var newZ = camera.position.z + delta * 0.0005;
+        camera.position.z = newZ;
+        event.preventDefault();
+      });
+      AFRAME.registerComponent("material-color", {
+        schema: { type: "color" },
+
+        update: function () {
+          var color = new THREE.Color(this.data);
+          var el = this.el;
+
+          el.addEventListener("model-loaded", function () {
+            var mesh = el.getObject3D("mesh");
+            if (!mesh) return;
+
+            mesh.traverse(function (node) {
+              if (node.isMesh && node.material) {
+                node.material.color.set(color);
+              }
+            });
+          });
+        }
+      });
+
+      AFRAME.registerComponent("green-glass-material", {
+        init: function () {
+          var el = this.el;
+          var loader = new THREE.TextureLoader();
+          var envMap = loader.load(
+            "https://cdn.polyhaven.org/asset_img/tn/venice_sunset_1k.hdr"
+          );
+
+          el.addEventListener("model-loaded", function () {
+            var mesh = el.getObject3D("mesh");
+            if (!mesh) return;
+
+            mesh.traverse(function (node) {
+              if (node.isMesh) {
+                node.material = new THREE.MeshStandardMaterial({
+                  color: 0x00ff00, // 绿色
+                  envMap: envMap,
+                  metalness: 0.7,
+                  roughness: 0.5,
+                  transparent: true,
+                  opacity: 0.4,
+                  refractionRatio: 0.98
+                });
+              }
+            });
+          });
+        },
+        updateMaterial: function (opts) {
+          var mesh = this.el.getObject3D("mesh");
+          if (!mesh) return;
+
+          mesh.traverse(function (node) {
+            if (node.isMesh) {
+              node.material.emissiveIntensity = opts.emissiveIntensity;
+            }
+          });
+        }
+      });
+
+      AFRAME.registerComponent("metal-material", {
+        init: function () {
+          var el = this.el;
+          var loader = new THREE.TextureLoader();
+          var envMap = loader.load(
+            "https://cdn.polyhaven.org/asset_img/tn/venice_sunset_1k.hdr"
+          );
+
+          el.addEventListener("model-loaded", function () {
+            var mesh = el.getObject3D("mesh");
+            if (!mesh) return;
+
+            mesh.traverse(function (node) {
+              if (node.isMesh) {
+                node.material = new THREE.MeshStandardMaterial({
+                  color: 0xe0e0e0, // 金属颜色
+                  envMap: envMap,
+                  metalness: 1,
+                  roughness: 0.5
+                });
+              }
+            });
+          });
+        },
+        updateMaterial: function (opts) {
+          var mesh = this.el.getObject3D("mesh");
+          if (!mesh) return;
+
+          mesh.traverse(function (node) {
+            if (node.isMesh) {
+              node.material.emissiveIntensity = opts.emissiveIntensity;
+            }
+          });
+        }
+      });
+      AFRAME.registerComponent("cool-material", {
+        init: function () {
+          var el = this.el;
+          var loader = new THREE.TextureLoader();
+          var envMap = loader.load(
+            "https://cdn.polyhaven.org/asset_img/tn/venice_sunset_1k.hdr"
+          );
+
+          el.addEventListener("model-loaded", function () {
+            var mesh = el.getObject3D("mesh");
+            if (!mesh) return;
+
+            mesh.traverse(function (node) {
+              if (node.isMesh) {
+                node.material = new THREE.MeshStandardMaterial({
+                  color: 0x00ff, // 霓虹颜色
+                  envMap: envMap,
+                  emissive: 0x00ff00,
+                  emissiveIntensity: 1.2,
+                  metalness: 0.6,
+                  roughness: 0.5
+                });
+              }
+            });
+          });
+        }
+      });
+
+      function setEnvironment(mode) {
+        var environmentEl = document.getElementById("environment");
+        var modelEl = document.querySelectorAll(
+          "[green-glass-material], [metal-material]"
+        );
+        var dynamicColorEls = document.querySelectorAll(".dynamic-color");
+
+        // 重置环境，移除任何自定义属性
+        environmentEl.setAttribute("environment", "preset: default");
+
+        function setDynamicColor(color) {
+          console.log("Setting dynamic color to:", color);
+          dynamicColorEls.forEach(function (el) {
+            el.style.color = color;
+          });
+        }
+
+        switch (mode) {
+          case "day":
+            environmentEl.setAttribute(
+              "environment",
+              "preset: forest; dressingAmount: 300; dressingColor: #005400; dressingScale: 13.9; dressingVariance: {x: 3, y: 5, z: 6}; skyType: gradient; horizonColor: #FFF900; skyColor:#30FFFF ; fog: 0.81;ground: flat"
+            );
+            /*  modelEl.forEach((el) => {
+                 el.components["green-glass-material"]?.updateMaterial({
+                   emissiveIntensity: 0
+                 });
+                 el.components["metal-material"]?.updateMaterial({
+                   emissiveIntensity: 0
+                 });
+               });
+               removeCoolMaterial("#structure");
+               removeCoolMaterial("#control-box");
+
+               */
+            setDynamicColor("#333");
+            break;
+          case "dusk":
+            environmentEl.setAttribute(
+              "environment",
+              "preset: forest; dressingAmount: 120; dressingColor: #004800; dressingScale: 3; dressingVariance: {x: 5, y: 15, z: 8}; skyType: gradient; horizonColor: #FFA501; skyColor: #FF3500; fog: 0.88; ground: flat"
+            );
+
+            setDynamicColor("#333");
+            break;
+          case "night":
+            skyColor = "#000";
+            environmentEl.setAttribute(
+              "environment",
+              "preset: starry; skyType: atmosphere; fog: 0.1; grid: none; ground:none"
+            );
+            modelEl.forEach((el) => {
+              if (!el.is("#structure") && !el.is("#control-box")) {
+                el.components["green-glass-material"]?.updateMaterial({
+                  emissiveIntensity: 5
+                });
+                el.components["metal-material"]?.updateMaterial({
+                  emissiveIntensity: 4
+                });
+              }
+            });
+            applyCoolMaterial("#structure");
+            applyCoolMaterial("#control-box");
+            setDynamicColor("#fff");
+
+            break;
+          case "zen":
+            environmentEl.setAttribute(
+              "environment",
+              "preset: starry; skyType: gradient; horizonColor: #000000; skyColor: #FFFFFF; ground: none; fog: 0.8 ;"
+            );
+            document.querySelector("a-sky").setAttribute("color", "#FFFFFF");
+            setDynamicColor("#ffffff");
+            break;
+
+          default:
+            console.error("Unknown environment mode: " + mode);
+            return;
+        }
+        document.querySelector("a-sky").setAttribute("color", skyColor);
+      }
+
+      function applyCoolMaterial(selector) {
+        var el = document.querySelector(selector);
+        if (el) {
+          // 等待模型加载完成
+          el.addEventListener("model-loaded", () => {
+            changeToCoolMaterial(el);
+          });
+        }
+      }
+
+      function changeToCoolMaterial(el) {
+        el.removeAttribute("metal-material");
+        el.removeAttribute("green-glass-material");
+        el.setAttribute("cool-material", "");
+      }
+
+      // 在页面加载时默认为白天模式
+      setEnvironment("day");
+
+      window.addEventListener("touchstart", function (event) {
+        if (event.touches.length === 2) {
+          pinchZoom.isPinching = true;
+          pinchZoom.initialDistance = getDistanceBetweenTouches(event);
+        }
+      });
+
+      window.addEventListener("touchmove", function (event) {
+        if (pinchZoom.isPinching && event.touches.length === 2) {
+          pinchZoom.currentDistance = getDistanceBetweenTouches(event);
+          var zoomFactor =
+            pinchZoom.currentDistance / pinchZoom.initialDistance;
+          adjustCameraZoom(zoomFactor);
+          pinchZoom.initialDistance = pinchZoom.currentDistance;
+        }
+      });
+
+      window.addEventListener("touchend", function () {
+        pinchZoom.isPinching = false;
+        pinchZoom.initialDistance = null;
+      });
+
+      function getDistanceBetweenTouches(event) {
+        var dx = event.touches[0].pageX - event.touches[1].pageX;
+        var dy = event.touches[0].pageY - event.touches[1].pageY;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+
+      function adjustCameraZoom(zoomFactor) {
+        // 根据缩放因子调整相机位置
+        var newZ = camera.position.z * zoomFactor;
+        camera.position.z = newZ;
+      }
+
+      // 调整默认相机位置
+      function adjustDefaultCameraPosition() {
+        camera.position.set(0, 0, 4); // 调整为更近的位置
+      }
+
+      // 调整 Shift 键平移功能
+      window.addEventListener("keydown", function (event) {
+        if (event.key === "Shift") {
+          camera.controls.enablePan = true;
+        }
+      });
+
+      window.addEventListener("keyup", function (event) {
+        if (event.key === "Shift") {
+          camera.controls.enablePan = false;
+        }
+      });
+
+      function adjustInfoTextPosition() {
+        var infoText = document.getElementById("infoText");
+        if (isChineseMode) {
+          // 调整为适合中文的位置
+          infoText.style.right = "25px"; // 示例值，根据需要调整
+          infoText.style.top = "15px"; // 示例值，根据需要调整
+        } else {
+          // 调整为适合英文的位置
+          infoText.style.right = "10px"; // 示例值，根据需要调整
+          infoText.style.top = "15px"; // 示例值，根据需要调整
+        }
+      }
+      // 添加重置视图按钮的功能
+
+      // 切换中文模式
+      var isChineseMode = false;
+      function toggleLanguage() {
+        isChineseMode = !isChineseMode;
+        var elementsToTranslate = {
+          "structure-button": ["Structure", "整體結構"],
+          "tank-button": ["Tank", "藻缸"],
+          "control-box-button": ["Control Box", "控制箱"],
+          "implode-all-button": ["Implode All", "模型重組"],
+          dayMode: ["Day Mode", "日間模式"],
+          duskMode: ["Dusk Mode", "黄昏模式"],
+          nightMode: ["Night Mode", "夜間模式"],
+          zenMode: ["Zen Mode", "空無模式"],
+          toggleModelRotation: ["Toggle Model Rotation", "模型旋轉"],
+          resetViewButton: ["Reset View", "重置視圖"],
+          languageToggleButton: ["English Mode", "中文模式"],
+          infoText: [
+            "<strong><p>Use mouse to rotate and zoom</p><p>Shift + Drag to pan</p></strong>",
+            "<strong><p>使用滑鼠旋轉和縮放</p><p>Shift + 拖曳來平移</p></strong>"
+          ],
+
+          explodeModelTitle: [
+            "<strong>Explode Model</strong>",
+            "<strong>模型爆炸圖</strong>"
+          ],
+          backgroundSceneTitle: [
+            "<strong>Background Scene</strong>",
+            "<strong>背景場景設定</strong>"
+          ],
+          rotationTitle: [
+            "<strong>Rotation</strong>",
+            "<strong>旋轉與重置</strong>"
+          ],
+          rotateSpeedControllerLabel: [
+            "Rotate Speed Controller",
+            "旋轉速度控制器"
+          ]
+        };
+
+        for (var key in elementsToTranslate) {
+          var element = document.getElementById(key);
+          if (element) {
+            element.innerHTML = isChineseMode
+              ? elementsToTranslate[key][1]
+              : elementsToTranslate[key][0];
+          }
+        }
+        adjustInfoTextPosition();
+      }
+
+      toggleLanguage(); // 初始调用以设置正确的语言模式
+      // 其他 JavaScript 代码
+
+      // Central function to manage camera position and rotation
+    </script>
+  </body>
+</html>
