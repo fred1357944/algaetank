@@ -1,6 +1,6 @@
 let scene, camera, renderer, instancedSpheres, mouse, raycaster;
 const boundarySize = { x: 10, y: 10, z: 2 };
-const instanceCount = 20000; // 球体的数量
+const instanceCount = 10000; // 球体的数量
 let mouseInfluenceRadius = 5; // 鼠标影响圆的初始半径
 let mouseInfluenceRadiusDelta = 0.9; // 半径的变化量
 
@@ -113,7 +113,7 @@ function init() {
   spheres = [];
 
   // const material = new THREE.MeshBasicMaterial({ color: 0xff00 });
-  for (let i = 0; i < 3000; i++) {
+  for (let i = 0; i < 500; i++) {
     const radius = THREE.MathUtils.randFloat(0.03, 0.025); // 生成0.3到0.8之间的随机半径
     const geometry = new THREE.SphereGeometry(radius, 32, 32);
     const material = new THREE.MeshPhongMaterial({
