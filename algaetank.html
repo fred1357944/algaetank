@@ -446,6 +446,11 @@
         rotation: { x: 0, y: Math.PI / 2, z: 0 }, // Adjust as needed
         target: { x: -0.4, y: 0, z: 0.2 }
       };
+      var pinchZoom = {
+        isPinching: false,
+        initialDistance: null,
+        currentDistance: null
+      };
 
       document.querySelector("a-scene").addEventListener("loaded", function () {
         camera = document.querySelector("#main-camera").getObject3D("camera");
@@ -1052,6 +1057,7 @@
 
       window.addEventListener("touchstart", function (event) {
         if (event.touches.length === 2) {
+          event.preventDefault(); // 防止页面的默认缩放行为
           pinchZoom.isPinching = true;
           pinchZoom.initialDistance = getDistanceBetweenTouches(event);
         }
@@ -1059,6 +1065,7 @@
 
       window.addEventListener("touchmove", function (event) {
         if (pinchZoom.isPinching && event.touches.length === 2) {
+          event.preventDefault(); // 防止页面的默认滚动行为
           pinchZoom.currentDistance = getDistanceBetweenTouches(event);
           var zoomFactor =
             pinchZoom.currentDistance / pinchZoom.initialDistance;
@@ -1070,6 +1077,7 @@
       window.addEventListener("touchend", function () {
         pinchZoom.isPinching = false;
         pinchZoom.initialDistance = null;
+        pinchZoom.currentDistance = null;
       });
 
       function getDistanceBetweenTouches(event) {
@@ -1080,10 +1088,13 @@
 
       function adjustCameraZoom(zoomFactor) {
         // 根据缩放因子调整相机位置
+        // 注意：你可能需要根据实际的场景逻辑来调整缩放行为
         var newZ = camera.position.z * zoomFactor;
-        camera.position.z = newZ;
+        // 限制相机的 Z 轴位置，防止过度缩放
+        camera.position.z = Math.min(Math.max(newZ, minZoom), maxZoom);
       }
-
+      var minZoom = 0.5; // 最小缩放
+      var maxZoom = 5; // 最大缩放
       // 调整默认相机位置
       function adjustDefaultCameraPosition() {
         camera.position.set(0, 0, 4); // 调整为更近的位置
