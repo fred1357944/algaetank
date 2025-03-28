@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Advanced 3D Model Showcase</title>
-    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"
       defer
@@ -243,6 +243,13 @@
     </style>
   </head>
   <body>
+    <div id="loading-overlay" style="position: fixed; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999;">
+      <h2>載入中...</h2>
+      <div id="loading-progress" style="width: 300px; height: 20px; background-color: #333; border-radius: 10px; margin-top: 20px;">
+        <div id="progress-bar" style="width: 0%; height: 100%; background-color: #00ff00; border-radius: 10px; transition: width 0.3s;"></div>
+      </div>
+      <p id="loading-status">準備加載資源...</p>
+    </div>
     <div class="button-container">
       <!-- Explode Model 按钮组 -->
       <div class="button-title dynamic-color" id="explodeModelTitle">
@@ -360,12 +367,12 @@
       <a-assets>
         <a-asset-item
           id="structure-model"
-          src="3D/structure-model.gltf"
+          src="./3D/structure-model.gltf"
         ></a-asset-item>
-        <a-asset-item id="tank-model" src="3D/tank-model.gltf"></a-asset-item>
+        <a-asset-item id="tank-model" src="./3D/tank-model.gltf"></a-asset-item>
         <a-asset-item
           id="control-box-model"
-          src="3D/control-box-model.gltf"
+          src="./3D/control-box-model.gltf"
         ></a-asset-item>
       </a-assets>
 
@@ -420,6 +427,69 @@
     </a-scene>
 
     <script>
+      // 模型加載錯誤處理
+      document.addEventListener('DOMContentLoaded', function() {
+        // 設置全域錯誤捕獲
+        window.addEventListener('error', function(event) {
+          console.error('全域錯誤:', event.message, event.filename, event.lineno, event.colno);
+        });
+
+        // 針對 A-Frame 模型加載的錯誤處理
+        const assetItems = document.querySelectorAll('a-asset-item');
+        assetItems.forEach(item => {
+          console.log(`監聽資源: ${item.id}, 路徑: ${item.getAttribute('src')}`);
+          
+          item.addEventListener('error', function(event) {
+            console.error(`無法加載資源: ${item.id}, 路徑: ${item.getAttribute('src')}`);
+          });
+        });
+
+        // 監聽每個元素的模型加載事件
+        document.querySelectorAll('[gltf-model]').forEach(el => {
+          el.addEventListener('model-loaded', function(e) {
+            console.log(`模型 ${el.id} 加載成功`);
+          });
+          
+          el.addEventListener('model-error', function(e) {
+            console.error(`模型 ${el.id} 加載錯誤:`, e.detail);
+          });
+        });
+
+        // 資源加載處理
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const progressBar = document.getElementById('progress-bar');
+        const loadingStatus = document.getElementById('loading-status');
+        
+        // 資源加載計數
+        let loadedItems = 0;
+        const totalItems = document.querySelectorAll('a-asset-item').length;
+        
+        // 加載完成處理
+        document.querySelector('a-assets').addEventListener('loaded', function() {
+          console.log('所有資源加載完成');
+          progressBar.style.width = '100%';
+          loadingStatus.textContent = '加載完成！';
+          
+          setTimeout(function() {
+            loadingOverlay.style.opacity = '0';
+            loadingOverlay.style.transition = 'opacity 0.5s';
+            setTimeout(function() {
+              loadingOverlay.style.display = 'none';
+            }, 500);
+          }, 500);
+        });
+        
+        // 加載進度處理
+        document.querySelectorAll('a-asset-item').forEach(item => {
+          item.addEventListener('loaded', function() {
+            loadedItems++;
+            const progress = Math.floor((loadedItems / totalItems) * 100);
+            progressBar.style.width = progress + '%';
+            loadingStatus.textContent = `加載中... ${progress}%`;
+          });
+        });
+      });
+
       var modelStates = {
         structure: { expanded: false, position: { x: 0, y: 0, z: 0 } },
         tank: { expanded: false, position: { x: 0, y: 0, z: 0 } },
@@ -855,11 +925,7 @@
       AFRAME.registerComponent("green-glass-material", {
         init: function () {
           var el = this.el;
-          var loader = new THREE.TextureLoader();
-          var envMap = loader.load(
-            "https://cdn.polyhaven.org/asset_img/tn/venice_sunset_1k.hdr"
-          );
-
+          
           el.addEventListener("model-loaded", function () {
             var mesh = el.getObject3D("mesh");
             if (!mesh) return;
@@ -868,7 +934,6 @@
               if (node.isMesh) {
                 node.material = new THREE.MeshStandardMaterial({
                   color: 0x00ff00, // 绿色
-                  envMap: envMap,
                   metalness: 0.7,
                   roughness: 0.5,
                   transparent: true,
@@ -894,10 +959,6 @@
       AFRAME.registerComponent("metal-material", {
         init: function () {
           var el = this.el;
-          var loader = new THREE.TextureLoader();
-          var envMap = loader.load(
-            "https://cdn.polyhaven.org/asset_img/tn/venice_sunset_1k.hdr"
-          );
 
           el.addEventListener("model-loaded", function () {
             var mesh = el.getObject3D("mesh");
@@ -907,7 +968,6 @@
               if (node.isMesh) {
                 node.material = new THREE.MeshStandardMaterial({
                   color: 0xe0e0e0, // 金属颜色
-                  envMap: envMap,
                   metalness: 1,
                   roughness: 0.5
                 });
@@ -929,10 +989,6 @@
       AFRAME.registerComponent("cool-material", {
         init: function () {
           var el = this.el;
-          var loader = new THREE.TextureLoader();
-          var envMap = loader.load(
-            "https://cdn.polyhaven.org/asset_img/tn/venice_sunset_1k.hdr"
-          );
 
           el.addEventListener("model-loaded", function () {
             var mesh = el.getObject3D("mesh");
@@ -942,7 +998,6 @@
               if (node.isMesh) {
                 node.material = new THREE.MeshStandardMaterial({
                   color: 0x00ff, // 霓虹颜色
-                  envMap: envMap,
                   emissive: 0x00ff00,
                   emissiveIntensity: 1.2,
                   metalness: 0.6,
