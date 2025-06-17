@@ -1,168 +1,178 @@
-let scene, camera, renderer, instancedSpheres, mouse, raycaster;
+let scene, camera, renderer, instancedSpheres, mouse, raycaster, pointLight, spheres;
 const boundarySize = { x: 10, y: 10, z: 2 };
 const instanceCount = 20000; // 球体的数量
 let mouseInfluenceRadius = 5; // 鼠标影响圆的初始半径
 let mouseInfluenceRadiusDelta = 0.9; // 半径的变化量
 
-init();
-animate();
+// Check if WebGL is available and Three.js is loaded
+window.addEventListener('DOMContentLoaded', function() {
+  if (!window.WebGLRenderingContext) {
+    alert('您的瀏覽器不支援 WebGL。請使用現代瀏覽器。');
+    console.error('WebGL not supported');
+    return;
+  }
+  
+  if (typeof THREE === 'undefined') {
+    alert('Three.js 載入失敗。請檢查網路連接。');
+    console.error('Three.js not loaded');
+    return;
+  }
+  
+  init();
+  animate();
+});
 
 function init() {
-  // 基本场景设置
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
-  camera.position.z = 15;
-  // 环境光源
-  const ambientLight = new THREE.AmbientLight(0xddffdd, 0.25); // 色彩，强度
-  scene.add(ambientLight);
+  try {
+    // 基本场景设置
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(
+      75,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000
+    );
+    camera.position.z = 15;
+    // 环境光源
+    const ambientLight = new THREE.AmbientLight(0xddffdd, 0.25); // 色彩，强度
+    scene.add(ambientLight);
 
-  pointLight = new THREE.PointLight(0xffffff, 10, 10);
-  scene.add(pointLight);
-  pointLight.decay = 6; // 衰减
-  mouse = new THREE.Vector2();
-  raycaster = new THREE.Raycaster();
+    pointLight = new THREE.PointLight(0xffffff, 10, 10);
+    scene.add(pointLight);
+    pointLight.decay = 6; // 衰减
+    mouse = new THREE.Vector2();
+    raycaster = new THREE.Raycaster();
 
-  const radius = 0.01; // 基础半径
-  const geometry = new THREE.SphereGeometry(radius, 32, 32);
-  const material = new THREE.MeshPhongMaterial({
-    color: 0xff00,
-    opacity: 0.9,
-    transparent: true,
-    roughness: 0.9,
-    metalness: 0.9,
-    shininess: 90
-  });
-
-  instancedSpheres = new THREE.InstancedMesh(geometry, material, instanceCount);
-  const matrix = new THREE.Matrix4();
-  const position = new THREE.Vector3();
-  const scale = new THREE.Vector3();
-  const quaternion = new THREE.Quaternion();
-
-  for (let i = 0; i < instanceCount; i++) {
-    // 随机位置
-    position.x = THREE.MathUtils.randFloatSpread(boundarySize.x);
-    position.y = THREE.MathUtils.randFloatSpread(boundarySize.y);
-    position.z = THREE.MathUtils.randFloatSpread(boundarySize.z);
-
-    // 随机大小
-    const randomScale = THREE.MathUtils.randFloat(0.01, 0.02) / radius;
-    scale.set(randomScale, randomScale, randomScale);
-
-    matrix.compose(position, quaternion, scale);
-    instancedSpheres.setMatrixAt(i, matrix);
-  }
-
-  scene.add(instancedSpheres);
-
-  /*
-  const boundaryGeometry = new THREE.BoxGeometry(6, 20, 4); // XYZ维度的大小
-  const boundaryMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffffff,
-    wireframe: true // 仅显示线框
-  });
-  const boundaryBox = new THREE.Mesh(boundaryGeometry, boundaryMaterial);
-  scene.add(boundaryBox);
-本來這一段是有中間的 X 面結構線條 */
-
-  // 创建发光效果的边界盒子
-  /*  const glowBoundaryGeometry = new THREE.BoxGeometry(
-    boundarySize.x + 0.2, // 稍大一点以创建发光边框效果
-    boundarySize.y + 0.2,
-    boundarySize.z + 0.2
-  );
-  const glowMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffff00,
-    transparent: true,
-    opacity: 0
-  });
-  const glowBoundaryBox = new THREE.Mesh(glowBoundaryGeometry, glowMaterial);
-  scene.add(glowBoundaryBox); */
-
-  // 现有的边界盒子 (BoundaryBox)
-  const boundaryGeometry = new THREE.BoxGeometry(
-    boundarySize.x,
-    boundarySize.y,
-    boundarySize.z
-  );
-  const edges = new THREE.EdgesGeometry(boundaryGeometry);
-  const boundaryMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
-  const boundaryBox = new THREE.LineSegments(edges, boundaryMaterial);
-  scene.add(boundaryBox);
-
-  // 渲染器设置
-  const container = document.getElementById("scene-container");
-  // 渲染器设置
-  renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  renderer.setPixelRatio(window.devicePixelRatio);
-
-  renderer.toneMapping = THREE.ACESFilmicToneMapping; // 应用色调映射
-  renderer.toneMappingExposure = 1.0; // 调整曝光
-  document.body.appendChild(renderer.domElement);
-
-  // 将渲染器的 canvas 元素添加到页面中的 div 容器里
-  container.appendChild(renderer.domElement);
-
-  // 创建球体
-  spheres = [];
-
-  // const material = new THREE.MeshBasicMaterial({ color: 0xff00 });
-  for (let i = 0; i < 500; i++) {
-    const radius = THREE.MathUtils.randFloat(0.03, 0.025); // 生成0.3到0.8之间的随机半径
+    const radius = 0.01; // 基础半径
     const geometry = new THREE.SphereGeometry(radius, 32, 32);
     const material = new THREE.MeshPhongMaterial({
       color: 0xff00,
-      opacity: 0.6,
+      opacity: 0.9,
       transparent: true,
-      roughness: 0.9,
-      metalness: 0.9,
-      shininess: 80 // 调整这个值以改变高光效果的强度
-      // 其他可调整的属性...
+      shininess: 90
     });
-    /* const sphere = new THREE.Mesh(geometry, material);
-    // 初始化球体位置
-    sphere.position.set(
-      Math.random() * 4 - 2,
-      Math.random() * 4 - 2,
-      Math.random() * 4 - 2
-    ); */
-    const sphere = new THREE.Mesh(geometry, material);
-    // 初始化球体位置
-    sphere.position.set(
-      THREE.MathUtils.randFloatSpread(boundarySize.x), // 在边界内随机分布
-      THREE.MathUtils.randFloatSpread(boundarySize.y),
-      THREE.MathUtils.randFloatSpread(boundarySize.z)
-    );
-    // 初始化速度，并存储初始速度
-    const initialVelocity = new THREE.Vector3(
-      (Math.random() - 0.5) * 0.05,
-      (Math.random() - 0.5) * 0.05,
-      0
-    );
-    sphere.velocity = initialVelocity.clone();
-    sphere.initialVelocity = initialVelocity;
-    spheres.push(sphere);
-    scene.add(sphere);
-  }
 
-  // 监听鼠标事件
-  document.addEventListener("mousemove", onMouseMove, false);
-  window.addEventListener("resize", onWindowResize, false);
+    instancedSpheres = new THREE.InstancedMesh(geometry, material, instanceCount);
+    const matrix = new THREE.Matrix4();
+    const position = new THREE.Vector3();
+    const scale = new THREE.Vector3();
+    const quaternion = new THREE.Quaternion();
+
+    for (let i = 0; i < instanceCount; i++) {
+      // 随机位置
+      position.x = THREE.MathUtils.randFloatSpread(boundarySize.x);
+      position.y = THREE.MathUtils.randFloatSpread(boundarySize.y);
+      position.z = THREE.MathUtils.randFloatSpread(boundarySize.z);
+
+      // 随机大小
+      const randomScale = THREE.MathUtils.randFloat(0.01, 0.02) / radius;
+      scale.set(randomScale, randomScale, randomScale);
+
+      matrix.compose(position, quaternion, scale);
+      instancedSpheres.setMatrixAt(i, matrix);
+    }
+
+    scene.add(instancedSpheres);
+
+    /*
+    const boundaryGeometry = new THREE.BoxGeometry(6, 20, 4); // XYZ维度的大小
+    const boundaryMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      wireframe: true // 仅显示线框
+    });
+    const boundaryBox = new THREE.Mesh(boundaryGeometry, boundaryMaterial);
+    scene.add(boundaryBox);
+    本來這一段是有中間的 X 面結構線條 */
+
+    // 创建发光效果的边界盒子
+    /*  const glowBoundaryGeometry = new THREE.BoxGeometry(
+      boundarySize.x + 0.2, // 稍大一点以创建发光边框效果
+      boundarySize.y + 0.2,
+      boundarySize.z + 0.2
+    );
+    const glowMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffff00,
+      transparent: true,
+      opacity: 0
+    });
+    const glowBoundaryBox = new THREE.Mesh(glowBoundaryGeometry, glowMaterial);
+    scene.add(glowBoundaryBox); */
+
+    // 现有的边界盒子 (BoundaryBox)
+    const boundaryGeometry = new THREE.BoxGeometry(
+      boundarySize.x,
+      boundarySize.y,
+      boundarySize.z
+    );
+    const edges = new THREE.EdgesGeometry(boundaryGeometry);
+    const boundaryMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+    const boundaryBox = new THREE.LineSegments(edges, boundaryMaterial);
+    scene.add(boundaryBox);
+
+    // 渲染器设置
+    const container = document.getElementById("scene-container");
+    // 渲染器设置
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; // 应用色调映射
+    renderer.toneMappingExposure = 1.0; // 调整曝光
+    // 将渲染器的 canvas 元素添加到页面中的 div 容器里
+    container.appendChild(renderer.domElement);
+
+    // 创建球体
+    spheres = [];
+
+    // const material = new THREE.MeshBasicMaterial({ color: 0xff00 });
+    for (let i = 0; i < 500; i++) {
+      const radius = THREE.MathUtils.randFloat(0.03, 0.025); // 生成0.3到0.8之间的随机半径
+      const geometry = new THREE.SphereGeometry(radius, 32, 32);
+      const material = new THREE.MeshPhongMaterial({
+        color: 0xff00,
+        opacity: 0.6,
+        transparent: true,
+        shininess: 90
+      });
+      /* const sphere = new THREE.Mesh(geometry, material);
+      // 初始化球体位置
+      sphere.position.set(
+        Math.random() * 4 - 2,
+        Math.random() * 4 - 2,
+        Math.random() * 4 - 2
+      ); */
+      const sphere = new THREE.Mesh(geometry, material);
+      // 初始化球体位置
+      sphere.position.set(
+        THREE.MathUtils.randFloatSpread(boundarySize.x), // 在边界内随机分布
+        THREE.MathUtils.randFloatSpread(boundarySize.y),
+        THREE.MathUtils.randFloatSpread(boundarySize.z)
+      );
+      // 初始化速度，并存储初始速度
+      const initialVelocity = new THREE.Vector3(
+        (Math.random() - 0.5) * 0.05,
+        (Math.random() - 0.5) * 0.05,
+        0
+      );
+      sphere.velocity = initialVelocity.clone();
+      sphere.initialVelocity = initialVelocity;
+      spheres.push(sphere);
+      scene.add(sphere);
+    }
+
+    // 监听鼠标事件
+    document.addEventListener("mousemove", onMouseMove, false);
+    window.addEventListener("resize", onWindowResize, false);
+  } catch (error) {
+    console.error('初始化失敗:', error);
+    alert('網站初始化失敗。請檢查控制台以獲取更多信息。');
+  }
 }
 
 function onMouseMove(event) {
   // 将屏幕坐标转换为三维空间中的坐标
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-  // 更新鼠标三维坐标
-  mouse.unproject(camera);
 }
 
 function onWindowResize() {

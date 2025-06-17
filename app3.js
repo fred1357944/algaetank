@@ -1,4 +1,4 @@
-let scene, camera, renderer, instancedSpheres, mouse, raycaster;
+let scene, camera, renderer, instancedSpheres, mouse, raycaster, pointLight, spheres;
 const boundarySize = { x: 10, y: 10, z: 2 };
 const instanceCount = 10000; // 球体的数量
 let mouseInfluenceRadius = 5; // 鼠标影响圆的初始半径
@@ -33,8 +33,6 @@ function init() {
     color: 0xff00,
     opacity: 0.9,
     transparent: true,
-    roughness: 0.9,
-    metalness: 0.9,
     shininess: 90
   });
 
@@ -113,10 +111,7 @@ function init() {
       color: 0xff00,
       opacity: 0.6,
       transparent: true,
-      roughness: 0.9,
-      metalness: 0.9,
-      shininess: 80 // 调整这个值以改变高光效果的强度
-      // 其他可调整的属性...
+      shininess: 90
     });
     /* const sphere = new THREE.Mesh(geometry, material);
     // 初始化球体位置
@@ -154,8 +149,7 @@ function onMouseMove(event) {
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-  // 更新鼠标三维坐标
-  mouse.unproject(camera);
+  // 鼠标坐标已经在 -1 到 1 的范围内，不需要 unproject
 }
 
 function onWindowResize() {

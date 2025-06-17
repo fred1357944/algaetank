@@ -346,7 +346,7 @@
     </div>
 
     <a-scene
-      renderer="colorManagement: true;"
+      renderer="colorManagement: true; shadowMapEnabled: true; shadowMapType: PCFSoft;"
       cursor="rayOrigin: mouse"
       raycaster="objects: [cube]"
       fog="color: #000000; near: 1; far: 110; oneMapping: ACESFilmicToneMapping"
@@ -386,21 +386,28 @@
       <a-light
         type="directional"
         color="#fff"
-        intensity="3"
-        position="3 5 3"
+        intensity="2"
+        position="5 8 5"
         cast-shadow="true"
         shadow-camera-near="1"
-        shadow-camera-far="15"
-        shadow-camera-left="-5"
-        shadow-camera-right="5"
-        shadow-camera-top="5"
-        shadow-camera-bottom="-5"
-        shadow-mapSize-width="1024"
-        shadow-mapSize-height="1024"
-        shadow-radius="1"
+        shadow-camera-far="20"
+        shadow-camera-left="-8"
+        shadow-camera-right="8"
+        shadow-camera-top="8"
+        shadow-camera-bottom="-8"
+        shadow-mapSize-width="2048"
+        shadow-mapSize-height="2048"
+        shadow-radius="2"
       ></a-light>
       <!--       <a-box position="0 0 0 " rotation="0 0 0" color="#4CC3D9"></a-box> -->
-      <a-light type="ambient" color="#fff" intensity="0.01"></a-light>
+      <a-light type="ambient" color="#fff" intensity="0.3"></a-light>
+      <a-light
+        type="point"
+        color="#fff"
+        intensity="1.5"
+        position="-3 4 3"
+        cast-shadow="true"
+      ></a-light>
       <a-sky :color="skyColor"></a-sky>
 
       <!-- <a-entity environment="preset: forest; dressingAmount: 800"></a-entity> -->
@@ -850,10 +857,6 @@
       AFRAME.registerComponent("green-glass-material", {
         init: function () {
           var el = this.el;
-          var loader = new THREE.TextureLoader();
-          var envMap = loader.load(
-            "https://cdn.polyhaven.org/asset_img/tn/venice_sunset_1k.hdr"
-          );
 
           el.addEventListener("model-loaded", function () {
             var mesh = el.getObject3D("mesh");
@@ -862,14 +865,16 @@
             mesh.traverse(function (node) {
               if (node.isMesh) {
                 node.material = new THREE.MeshStandardMaterial({
-                  color: 0x00ff00, // 绿色
-                  envMap: envMap,
-                  metalness: 0.7,
-                  roughness: 0.5,
+                  color: 0x00aa00, // 深綠色
+                  metalness: 0.1,
+                  roughness: 0.1,
                   transparent: true,
-                  opacity: 0.4,
-                  refractionRatio: 0.98
+                  opacity: 0.7,
+                  transmission: 0.9,
+                  thickness: 0.5
                 });
+                node.castShadow = true;
+                node.receiveShadow = true;
               }
             });
           });
@@ -889,10 +894,6 @@
       AFRAME.registerComponent("metal-material", {
         init: function () {
           var el = this.el;
-          var loader = new THREE.TextureLoader();
-          var envMap = loader.load(
-            "https://cdn.polyhaven.org/asset_img/tn/venice_sunset_1k.hdr"
-          );
 
           el.addEventListener("model-loaded", function () {
             var mesh = el.getObject3D("mesh");
@@ -901,11 +902,13 @@
             mesh.traverse(function (node) {
               if (node.isMesh) {
                 node.material = new THREE.MeshStandardMaterial({
-                  color: 0xe0e0e0, // 金属颜色
-                  envMap: envMap,
-                  metalness: 1,
-                  roughness: 0.5
+                  color: 0xc0c0c0, // 銀色
+                  metalness: 0.9,
+                  roughness: 0.2,
+                  envMapIntensity: 1.0
                 });
+                node.castShadow = true;
+                node.receiveShadow = true;
               }
             });
           });
@@ -924,10 +927,6 @@
       AFRAME.registerComponent("cool-material", {
         init: function () {
           var el = this.el;
-          var loader = new THREE.TextureLoader();
-          var envMap = loader.load(
-            "https://cdn.polyhaven.org/asset_img/tn/venice_sunset_1k.hdr"
-          );
 
           el.addEventListener("model-loaded", function () {
             var mesh = el.getObject3D("mesh");
@@ -935,13 +934,13 @@
 
             mesh.traverse(function (node) {
               if (node.isMesh) {
-                node.material = new THREE.MeshStandardMaterial({
-                  color: 0x00ff, // 霓虹颜色
-                  envMap: envMap,
-                  emissive: 0x00ff00,
-                  emissiveIntensity: 1.2,
-                  metalness: 0.6,
-                  roughness: 0.5
+                node.material = new THREE.MeshPhongMaterial({
+                  color: 0x0066ff, // 藍色霓虹
+                  emissive: 0x001155,
+                  emissiveIntensity: 0.8,
+                  shininess: 90,
+                  transparent: true,
+                  opacity: 0.9
                 });
               }
             });
@@ -970,20 +969,17 @@
           case "day":
             environmentEl.setAttribute(
               "environment",
-              "preset: forest; dressingAmount: 300; dressingColor: #005400; dressingScale: 13.9; dressingVariance: {x: 3, y: 5, z: 6}; skyType: gradient; horizonColor: #FFF900; skyColor:#30FFFF ; fog: 0.81;ground: flat"
+              "preset: forest; dressingAmount: 300; dressingColor: #005400; dressingScale: 13.9; dressingVariance: {x: 3, y: 5, z: 6}; skyType: gradient; horizonColor: #87CEEB; skyColor: #87CEEB; fog: 0.81;ground: flat"
             );
-            /*  modelEl.forEach((el) => {
-                 el.components["green-glass-material"]?.updateMaterial({
-                   emissiveIntensity: 0
-                 });
-                 el.components["metal-material"]?.updateMaterial({
-                   emissiveIntensity: 0
-                 });
-               });
-               removeCoolMaterial("#structure");
-               removeCoolMaterial("#control-box");
-
-               */
+            // 確保日間模式材質正常顯示
+            modelEl.forEach((el) => {
+              if (el.components["green-glass-material"]) {
+                el.components["green-glass-material"].init();
+              }
+              if (el.components["metal-material"]) {
+                el.components["metal-material"].init();
+              }
+            });
             setDynamicColor("#333");
             break;
           case "dusk":

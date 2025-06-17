@@ -55,13 +55,13 @@
       </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/three@0.125.2/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.125.2/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/postprocessing@6/build/postprocessing.min.js"></script>
-    <script src="app.js"></script>
+    <script src="app.js" defer></script>
     <script>
       // 監聽整個 body 的點擊事件
       document.body.addEventListener("click", function () {
-        window.location.href = "algaetank.html"; // 導航到 algaetank.html
+        window.location.href = "./algaetank.html"; // 使用相對路徑導航
       });
     </script>
   </body>

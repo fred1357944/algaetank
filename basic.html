@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Basic Test</title>
+</head>
+<body>
+    <h1>基本測試頁面</h1>
+    <p>如果你能看到這個訊息，表示 HTTP 伺服器正在運作。</p>
+    <p id="js-test">JavaScript 尚未載入...</p>
+    
+    <script>
+        document.getElementById('js-test').textContent = 'JavaScript 正常運作！';
+        console.log('頁面載入成功');
+    </script>
+</body>
+</html>

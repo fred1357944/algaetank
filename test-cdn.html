@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>CDN Test</title>
+    <style>
+        body { margin: 20px; font-family: Arial; }
+        .test { margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h2>CDN 測試</h2>
+    
+    <div class="test">
+        <p>測試 1: Three.js r169 (jsdelivr)</p>
+        <p id="test1">載入中...</p>
+    </div>
+    
+    <div class="test">
+        <p>測試 2: Three.js r125 (原始版本)</p>
+        <p id="test2">載入中...</p>
+    </div>
+    
+    <div class="test">
+        <p>測試 3: Three.js (unpkg CDN)</p>
+        <p id="test3">載入中...</p>
+    </div>
+    
+    <script>
+        // 測試 1: 新版本
+        const script1 = document.createElement('script');
+        script1.src = 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.min.js';
+        script1.onload = () => {
+            document.getElementById('test1').textContent = '✅ 成功！版本：' + window.THREE.REVISION;
+            delete window.THREE;
+        };
+        script1.onerror = () => {
+            document.getElementById('test1').textContent = '❌ 載入失敗';
+        };
+        document.head.appendChild(script1);
+        
+        // 等待第一個測試完成
+        setTimeout(() => {
+            // 測試 2: 原始版本
+            const script2 = document.createElement('script');
+            script2.src = 'https://cdn.jsdelivr.net/npm/three@0.125.2/build/three.min.js';
+            script2.onload = () => {
+                document.getElementById('test2').textContent = '✅ 成功！版本：' + window.THREE.REVISION;
+                delete window.THREE;
+            };
+            script2.onerror = () => {
+                document.getElementById('test2').textContent = '❌ 載入失敗';
+            };
+            document.head.appendChild(script2);
+        }, 2000);
+        
+        // 測試 3: unpkg
+        setTimeout(() => {
+            const script3 = document.createElement('script');
+            script3.src = 'https://unpkg.com/three@0.125.2/build/three.min.js';
+            script3.onload = () => {
+                document.getElementById('test3').textContent = '✅ 成功！版本：' + window.THREE.REVISION;
+            };
+            script3.onerror = () => {
+                document.getElementById('test3').textContent = '❌ 載入失敗';
+            };
+            document.head.appendChild(script3);
+        }, 4000);
+    </script>
+</body>
+</html>
