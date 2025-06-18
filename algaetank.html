@@ -7,6 +7,7 @@
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/aframe-environment-component/dist/aframe-environment-component.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-orbit-controls@1.3.0/dist/aframe-orbit-controls.min.js"></script>
 
     <style>
       body {
@@ -238,6 +239,57 @@
     </style>
   </head>
   <body>
+    <!-- 載入進度指示器 -->
+    <div id="loading-overlay" style="
+      position: fixed; 
+      width: 100%; 
+      height: 100%; 
+      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); 
+      color: white; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: center; 
+      align-items: center; 
+      z-index: 9999;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    ">
+      <div style="text-align: center;">
+        <div style="
+          width: 60px; 
+          height: 60px; 
+          border: 4px solid rgba(255,255,255,0.3); 
+          border-radius: 50%; 
+          border-top-color: #fff; 
+          animation: spin 1s ease-in-out infinite; 
+          margin: 0 auto 20px;
+        "></div>
+        <h2 style="margin: 10px 0; font-weight: 300;">載入綠藻缸模型</h2>
+        <div id="loading-progress" style="
+          width: 300px; 
+          height: 6px; 
+          background-color: rgba(255,255,255,0.2); 
+          border-radius: 3px; 
+          margin: 20px auto; 
+          overflow: hidden;
+        ">
+          <div id="progress-bar" style="
+            width: 0%; 
+            height: 100%; 
+            background: linear-gradient(90deg, #00ff88, #00d4ff); 
+            border-radius: 3px; 
+            transition: width 0.3s ease;
+          "></div>
+        </div>
+        <p id="loading-status" style="margin: 5px 0; opacity: 0.8; font-size: 14px;">正在載入資源...</p>
+      </div>
+    </div>
+
+    <style>
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
     <div class="button-container">
       <!-- Explode Model 按钮组 -->
       <div class="button-title dynamic-color" id="explodeModelTitle">
@@ -304,6 +356,24 @@
       >
         Zen Mode
       </button>
+      <!-- Color Customization 控制 -->
+      <div class="button-title dynamic-color" id="colorTitle">
+        <strong>Color Customization</strong>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; margin: 10px 0;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <label style="font-size: 10px; color: #666; min-width: 60px;">Tank:</label>
+          <input type="color" id="tank-color" value="#00aa00" style="width: 40px; height: 25px; border: none; border-radius: 3px; cursor: pointer;">
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <label style="font-size: 10px; color: #666; min-width: 60px;">Metal:</label>
+          <input type="color" id="metal-color" value="#c0c0c0" style="width: 40px; height: 25px; border: none; border-radius: 3px; cursor: pointer;">
+        </div>
+        <button class="toggle-button" id="apply-colors" onclick="applyCustomColors()" style="padding: 4px 8px; font-size: 10px; margin-top: 5px;">
+          Apply Colors
+        </button>
+      </div>
+
       <!-- Rotation 控制 -->
       <div class="button-title dynamic-color" id="rotationTitle">
         <strong>Rotation</strong>
@@ -334,8 +404,15 @@
       </button>
 
       <div class="info-text" id="infoText">
-        <strong><p>Use mouse to rotate and zoom</p></strong>
-        <strong><p>Shift + Drag to pan</p></strong>
+        <div style="background: rgba(0,0,0,0.7); padding: 12px; border-radius: 8px; backdrop-filter: blur(10px);">
+          <strong style="display: block; margin-bottom: 8px; font-size: 14px;">🎮 Controls</strong>
+          <p style="margin: 4px 0; font-size: 12px;">🖱️ Drag: Rotate view</p>
+          <p style="margin: 4px 0; font-size: 12px;">🔍 Scroll: Zoom in/out</p>
+          <p style="margin: 4px 0; font-size: 12px;">⌨️ Right click + drag: Pan</p>
+          <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.2);">
+            <p style="margin: 2px 0; font-size: 11px; opacity: 0.8;">💡 Try different lighting modes!</p>
+          </div>
+        </div>
       </div>
 
       <button class="toggle-button" id="zoom-button"></button>
@@ -416,12 +493,226 @@
     ></a-entity> -->
       <a-camera
         id="main-camera"
-        position="0 0 2"
-        look-controls="enabled: false; magicWindowTrackingEnabled: false; reverseMouseDrag: false; maxPitch: 90; minPitch: 0;"
+        position="0 1 3"
+        look-controls="enabled: true; reverseMouseDrag: false; pointerLockEnabled: false;"
+        wasd-controls="enabled: false;"
+        orbit-controls="
+          target: 0 0 0;
+          enableDamping: true;
+          dampingFactor: 0.1;
+          autoRotate: false;
+          enableZoom: true;
+          enablePan: true;
+          minDistance: 1;
+          maxDistance: 10;
+          minPolarAngle: 0;
+          maxPolarAngle: 1.57;
+        "
       ></a-camera>
     </a-scene>
 
     <script>
+      // 載入進度管理
+      document.addEventListener('DOMContentLoaded', function() {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const progressBar = document.getElementById('progress-bar');
+        const loadingStatus = document.getElementById('loading-status');
+        
+        let loadedAssets = 0;
+        const totalAssets = 3; // 3個GLTF模型
+        
+        // 監聽場景載入完成
+        document.querySelector('a-scene').addEventListener('loaded', function() {
+          setTimeout(() => {
+            progressBar.style.width = '100%';
+            loadingStatus.textContent = '載入完成！';
+            
+            setTimeout(() => {
+              loadingOverlay.style.opacity = '0';
+              loadingOverlay.style.transition = 'opacity 0.5s ease';
+              setTimeout(() => {
+                loadingOverlay.style.display = 'none';
+                // 顯示歡迎提示
+                showWelcomeGuide();
+              }, 500);
+            }, 800);
+          }, 1000);
+        });
+
+        // 歡迎指引
+        function showWelcomeGuide() {
+          if (localStorage.getItem('algaetank-welcome-shown')) return;
+          
+          setTimeout(() => {
+            showNotification('🎉 歡迎！按 H 鍵查看快捷鍵說明', 'info');
+            localStorage.setItem('algaetank-welcome-shown', 'true');
+          }, 1500);
+        }
+
+        // 監聽資產載入進度
+        document.querySelectorAll('a-asset-item').forEach((asset, index) => {
+          asset.addEventListener('loaded', () => {
+            loadedAssets++;
+            const progress = Math.floor((loadedAssets / totalAssets) * 80); // 80% for assets, 20% for setup
+            progressBar.style.width = progress + '%';
+            loadingStatus.textContent = `載入模型 ${loadedAssets}/${totalAssets}...`;
+          });
+        });
+      });
+
+      // 顏色自訂功能
+      function applyCustomColors() {
+        const tankColor = document.getElementById('tank-color').value;
+        const metalColor = document.getElementById('metal-color').value;
+        
+        // 更新綠藻缸顏色
+        const tankEl = document.querySelector('#tank');
+        if (tankEl && tankEl.getObject3D('mesh')) {
+          tankEl.getObject3D('mesh').traverse(function(node) {
+            if (node.isMesh) {
+              node.material.color.setHex(tankColor.replace('#', '0x'));
+            }
+          });
+        }
+        
+        // 更新金屬部件顏色
+        ['#structure', '#control-box'].forEach(selector => {
+          const el = document.querySelector(selector);
+          if (el && el.getObject3D('mesh')) {
+            el.getObject3D('mesh').traverse(function(node) {
+              if (node.isMesh) {
+                node.material.color.setHex(metalColor.replace('#', '0x'));
+              }
+            });
+          }
+        });
+        
+        // 顯示成功提示
+        showNotification('顏色已更新！', 'success');
+      }
+
+      // 快捷鍵支援
+      document.addEventListener('keydown', function(event) {
+        // 防止在輸入框中觸發
+        if (event.target.tagName === 'INPUT') return;
+        
+        switch(event.key.toLowerCase()) {
+          case '1':
+            setEnvironment('day');
+            showNotification('☀️ 切換到日間模式', 'info');
+            break;
+          case '2':
+            setEnvironment('dusk');
+            showNotification('🌅 切換到黃昏模式', 'info');
+            break;
+          case '3':
+            setEnvironment('night');
+            showNotification('🌙 切換到夜間模式', 'info');
+            break;
+          case '4':
+            setEnvironment('zen');
+            showNotification('🧘 切換到禪模式', 'info');
+            break;
+          case 'r':
+            resetView();
+            showNotification('🔄 視角已重置', 'info');
+            break;
+          case 'e':
+            implodeAll();
+            showNotification('📦 模型已重組', 'info');
+            break;
+          case 'h':
+            toggleHelpPanel();
+            break;
+        }
+      });
+
+      // 說明面板切換
+      function toggleHelpPanel() {
+        const helpPanel = document.getElementById('help-panel') || createHelpPanel();
+        helpPanel.style.display = helpPanel.style.display === 'none' ? 'block' : 'none';
+      }
+
+      function createHelpPanel() {
+        const panel = document.createElement('div');
+        panel.id = 'help-panel';
+        panel.style.cssText = `
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: rgba(0,0,0,0.9);
+          color: white;
+          padding: 30px;
+          border-radius: 12px;
+          z-index: 10001;
+          max-width: 400px;
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255,255,255,0.1);
+        `;
+        
+        panel.innerHTML = `
+          <div style="text-align: center;">
+            <h3 style="margin-top: 0; color: #00ff88;">🎮 快捷鍵說明</h3>
+            <div style="text-align: left; line-height: 1.6;">
+              <p><strong>1-4</strong>: 切換光照模式</p>
+              <p><strong>R</strong>: 重置視角</p>
+              <p><strong>E</strong>: 重組模型</p>
+              <p><strong>H</strong>: 顯示/隱藏此說明</p>
+            </div>
+            <button onclick="toggleHelpPanel()" style="
+              margin-top: 20px;
+              padding: 8px 16px;
+              background: #00ff88;
+              color: black;
+              border: none;
+              border-radius: 6px;
+              cursor: pointer;
+              font-weight: bold;
+            ">關閉</button>
+          </div>
+        `;
+        
+        document.body.appendChild(panel);
+        return panel;
+      }
+
+      // 通知系統
+      function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: ${type === 'success' ? '#4CAF50' : '#2196F3'};
+          color: white;
+          padding: 12px 20px;
+          border-radius: 6px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          z-index: 10000;
+          font-size: 14px;
+          transform: translateX(100%);
+          transition: transform 0.3s ease;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        // 動畫進入
+        setTimeout(() => {
+          notification.style.transform = 'translateX(0)';
+        }, 100);
+        
+        // 自動移除
+        setTimeout(() => {
+          notification.style.transform = 'translateX(100%)';
+          setTimeout(() => {
+            if (notification.parentNode) {
+              notification.parentNode.removeChild(notification);
+            }
+          }, 300);
+        }, 3000);
+      }
+
       var modelStates = {
         structure: { expanded: false, position: { x: 0, y: 0, z: 0 } },
         tank: { expanded: false, position: { x: 0, y: 0, z: 0 } },
@@ -1148,6 +1439,10 @@
           rotateSpeedControllerLabel: [
             "Rotate Speed Controller",
             "旋轉速度控制器"
+          ],
+          colorTitle: [
+            "<strong>Color Customization</strong>",
+            "<strong>顏色自訂</strong>"
           ]
         };
 
