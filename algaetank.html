@@ -309,6 +309,18 @@
           "></div>
         </div>
         <p id="loading-status" style="margin: 5px 0; opacity: 0.8; font-size: 14px;">正在載入資源...</p>
+        <button id="skip-loading" style="
+          margin-top: 20px;
+          padding: 10px 20px;
+          background: rgba(255,255,255,0.2);
+          border: 1px solid rgba(255,255,255,0.3);
+          color: white;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 14px;
+          display: none;
+          transition: all 0.3s ease;
+        " onclick="skipLoading()">跳過載入</button>
       </div>
     </div>
 
@@ -543,6 +555,20 @@
       // 註冊GSAP插件
       gsap.registerPlugin(ScrollTrigger, TextPlugin);
       
+      // 跳過載入功能
+      function skipLoading() {
+        const loadingOverlay = document.getElementById('loading-overlay');
+        gsap.to(loadingOverlay, {
+          duration: 0.5,
+          opacity: 0,
+          onComplete: () => {
+            loadingOverlay.style.display = 'none';
+            showWelcomeGuide();
+            initGSAPAnimations();
+          }
+        });
+      }
+      
       // GSAP 動畫初始化
       function initGSAPAnimations() {
         // 應用3D文字效果
@@ -641,6 +667,12 @@
         let loadedAssets = 0;
         const totalAssets = 3; // 3個GLTF模型
         
+        // 檢查是否在本地檔案系統
+        if (window.location.protocol === 'file:') {
+          console.warn('檢測到本地檔案系統，可能無法載入3D模型');
+          loadingStatus.textContent = '請使用HTTP伺服器或訪問線上版本';
+        }
+        
         // 監聽場景載入完成
         document.querySelector('a-scene').addEventListener('loaded', function() {
           setTimeout(() => {
@@ -690,16 +722,25 @@
           });
         });
         
+        // 3秒後顯示跳過按鈕
+        setTimeout(() => {
+          const skipButton = document.getElementById('skip-loading');
+          if (skipButton && loadingOverlay.style.display !== 'none') {
+            skipButton.style.display = 'block';
+            gsap.from(skipButton, {
+              duration: 0.5,
+              opacity: 0,
+              y: 20,
+              ease: "power2.out"
+            });
+          }
+        }, 3000);
+        
         // 超時處理
         setTimeout(() => {
           if (loadingOverlay.style.display !== 'none') {
             console.warn('載入超時，強制進入');
-            loadingOverlay.style.opacity = '0';
-            setTimeout(() => {
-              loadingOverlay.style.display = 'none';
-              showWelcomeGuide();
-              initGSAPAnimations();
-            }, 500);
+            skipLoading();
           }
         }, 10000); // 10秒超時
       });
