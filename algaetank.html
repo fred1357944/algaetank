@@ -133,7 +133,7 @@
         margin: 3px;
       }
       .button-container {
-        position: fixed;
+        position: absolute;
         left: 12px;
         bottom: 10px;
         z-index: 10;
@@ -141,73 +141,25 @@
         flex-direction: column;
         align-items: flex-start;
         text-transform: uppercase;
-        max-height: 90vh;
-        overflow-y: auto;
-        padding-bottom: 60px; /* 為版權文字留空間 */
-      }
-      
-      /* 自定義滾動條 */
-      .button-container::-webkit-scrollbar {
-        width: 6px;
-      }
-      
-      .button-container::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 3px;
-      }
-      
-      .button-container::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.3);
-        border-radius: 3px;
-      }
-      
-      .button-container::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.5);
       }
 
       .toggle-button {
         /* 左下按鈕文字*/
-        background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+        background-color: #f5f5f5; /* 淺灰色背景 */
         color: #333;
-        border: 1px solid rgba(0, 0, 0, 0.1);
+        border: 1px solid #d1d1d1; /* 淺色邊框 */
         padding: 8px 16px;
         font-size: 11px;
-        border-radius: 8px;
+        border-radius: 5px; /* 輕微的圓角 */
         cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        transition: all 0.3s ease-in-out;
         margin: 3px 0;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        position: relative;
-        overflow: hidden;
-        backdrop-filter: blur(10px);
-      }
-
-      .toggle-button::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
-        transform: translate(-50%, -50%);
-        transition: width 0.6s, height 0.6s;
-      }
-
-      .toggle-button:hover::before {
-        width: 300px;
-        height: 300px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* 更細膩的陰影 */
       }
 
       .toggle-button:hover {
-        background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-      }
-      
-      .toggle-button:active {
-        transform: translateY(0);
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        background-color: #e6e6e6; /* 悬停时的背景颜色 */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 悬停时的陰影 */
       }
 
       #info-dialog {
@@ -450,28 +402,8 @@
         </div>
       </div>
 
+      <button class="toggle-button" id="zoom-button"></button>
     </div>
-    
-    <!-- Zoom按鈕移到外面 -->
-    <button id="zoom-button" style="
-      position: fixed;
-      bottom: 30px;
-      right: 30px;
-      width: 50px;
-      height: 50px;
-      background: linear-gradient(135deg, #ff3b30 0%, #ff6b60 100%);
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      color: white;
-      font-size: 20px;
-      cursor: pointer;
-      z-index: 1000;
-      box-shadow: 0 4px 15px rgba(255, 59, 48, 0.4);
-      transition: all 0.3s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    " onclick="zoomInModel()">🔍</button>
 
       <div class="copyright-text">
         © 2023 Andgreen Co. Ltd. All rights reserved.
@@ -1630,27 +1562,8 @@
         `;
         document.body.appendChild(transitionOverlay);
         
-        // 淡入轉場
-        gsap.to(transitionOverlay, {
-          duration: 0.3,
-          opacity: 1,
-          ease: "power2.in",
-          onComplete: () => {
-            // 重置环境，移除任何自定义属性
-            environmentEl.setAttribute("environment", "preset: default");
-            
-            // 淡出轉場
-            gsap.to(transitionOverlay, {
-              duration: 0.5,
-              opacity: 0,
-              ease: "power2.out",
-              delay: 0.2,
-              onComplete: () => {
-                document.body.removeChild(transitionOverlay);
-              }
-            });
-          }
-        });
+        // 移除轉場效果，避免環境消失
+        transitionOverlay.remove();
 
         function setDynamicColor(color) {
           dynamicColorEls.forEach(function (el) {
@@ -1666,7 +1579,7 @@
           case "day":
             environmentEl.setAttribute(
               "environment",
-              "preset: forest; dressingAmount: 300; dressingColor: #005400; dressingScale: 13.9; dressingVariance: {x: 3, y: 5, z: 6}; skyType: gradient; horizonColor: #87CEEB; skyColor: #87CEEB; fog: 0.81; ground: flat; groundColor: #445; groundColor2: #333; groundTexture: checkerboard"
+              "preset: forest; dressingAmount: 0; skyType: gradient; horizonColor: #87CEEB; skyColor: #87CEEB; fog: 0.81; ground: flat; groundColor: #445; groundColor2: #333; groundTexture: checkerboard"
             );
             // 確保日間模式材質正常顯示
             modelEl.forEach((el) => {
@@ -1682,7 +1595,7 @@
           case "dusk":
             environmentEl.setAttribute(
               "environment",
-              "preset: forest; dressingAmount: 120; dressingColor: #004800; dressingScale: 3; dressingVariance: {x: 5, y: 15, z: 8}; skyType: gradient; horizonColor: #FFA501; skyColor: #FF3500; fog: 0.88; ground: flat; groundColor: #553; groundColor2: #331; groundTexture: checkerboard"
+              "preset: forest; dressingAmount: 0; skyType: gradient; horizonColor: #FFA501; skyColor: #FF3500; fog: 0.88; ground: flat; groundColor: #553; groundColor2: #331; groundTexture: checkerboard"
             );
 
             setDynamicColor("#333");
